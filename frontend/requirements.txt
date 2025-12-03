@@ -1,0 +1,4 @@
+flet==0.21.2
+requests==2.31.0
+firebase-admin==6.4.0
+

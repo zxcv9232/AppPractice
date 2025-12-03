@@ -1,0 +1,19 @@
+[project]
+name = "CryptoWatch"
+version = "1.0.0"
+description = "虛擬幣看盤應用"
+authors = ["Your Name"]
+
+[tool.flet]
+app-title = "虛擬幣看盤"
+app-description = "即時追蹤虛擬貨幣價格與警報"
+bundle-id = "com.yourname.cryptowatch"
+org-name = "YourName"
+
+[tool.flet.ios]
+team-id = "YOUR_TEAM_ID"
+bundle-id = "com.yourname.cryptowatch"
+
+[tool.flet.android]
+package = "com.yourname.cryptowatch"
+
