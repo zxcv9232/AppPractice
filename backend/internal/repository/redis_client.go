@@ -3,10 +3,10 @@ package repository
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"cryptowatch/internal/models"
+
 	"github.com/redis/go-redis/v9"
 )
 
@@ -117,61 +117,3 @@ func (r *RedisRepository) GetAllAlerts() ([]*models.Alert, error) {
 	}
 	return alerts, nil
 }
-
-func (r *RedisRepository) SaveVolumeSnapshot(symbol string, volume float64) error {
-	snapshot := &models.VolumeSnapshot{
-		Symbol:    symbol,
-		Volume:    volume,
-		Timestamp: time.Now(),
-	}
-	
-	data, err := json.Marshal(snapshot)
-	if err != nil {
-		return err
-	}
-	
-	key := "volume:" + symbol
-	return r.client.ZAdd(r.ctx, key, redis.Z{
-		Score:  float64(time.Now().Unix()),
-		Member: data,
-	}).Err()
-}
-
-func (r *RedisRepository) GetCumulativeVolume(symbol string, minutes int) (float64, error) {
-	key := "volume:" + symbol
-	now := time.Now()
-	startTime := now.Add(-time.Duration(minutes) * time.Minute)
-	
-	results, err := r.client.ZRangeByScore(r.ctx, key, &redis.ZRangeBy{
-		Min: fmt.Sprintf("%d", startTime.Unix()),
-		Max: fmt.Sprintf("%d", now.Unix()),
-	}).Result()
-	
-	if err != nil {
-		return 0, err
-	}
-	
-	if len(results) == 0 {
-		return 0, nil
-	}
-	
-	var firstSnapshot, lastSnapshot models.VolumeSnapshot
-	
-	if err := json.Unmarshal([]byte(results[0]), &firstSnapshot); err != nil {
-		return 0, err
-	}
-	
-	if err := json.Unmarshal([]byte(results[len(results)-1]), &lastSnapshot); err != nil {
-		return 0, err
-	}
-	
-	return lastSnapshot.Volume - firstSnapshot.Volume, nil
-}
-
-func (r *RedisRepository) CleanOldVolumeSnapshots(symbol string, hoursToKeep int) error {
-	key := "volume:" + symbol
-	cutoffTime := time.Now().Add(-time.Duration(hoursToKeep) * time.Hour)
-	
-	return r.client.ZRemRangeByScore(r.ctx, key, "0", fmt.Sprintf("%d", cutoffTime.Unix())).Err()
-}
-

@@ -76,3 +76,43 @@ func (s *PriceService) GetAllPrices() ([]*models.Price, error) {
 	return s.repo.GetAllPrices(s.symbols)
 }
 
+func (s *PriceService) FetchKlineVolume(symbol string, interval string) (float64, error) {
+	pair := symbol + "USDT"
+	url := fmt.Sprintf("%s/klines?symbol=%s&interval=%s&limit=1", s.apiURL, pair, interval)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return 0, err
+	}
+
+	var errorResp map[string]interface{}
+	if json.Unmarshal(body, &errorResp) == nil {
+		if code, ok := errorResp["code"]; ok {
+			msg := errorResp["msg"]
+			return 0, fmt.Errorf("binance error %v: %v", code, msg)
+		}
+	}
+
+	var klines [][]interface{}
+	if err := json.Unmarshal(body, &klines); err != nil {
+		return 0, err
+	}
+
+	if len(klines) == 0 {
+		return 0, fmt.Errorf("no kline data for %s", symbol)
+	}
+
+	volumeStr, ok := klines[0][5].(string)
+	if !ok {
+		return 0, fmt.Errorf("invalid volume format for %s", symbol)
+	}
+
+	return strconv.ParseFloat(volumeStr, 64)
+}
+

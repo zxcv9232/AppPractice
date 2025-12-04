@@ -1,0 +1,133 @@
+basePath: /api
+definitions:
+  models.CreateAlertRequest:
+    properties:
+      alertType:
+        type: string
+      direction:
+        type: string
+      symbol:
+        type: string
+      targetPrice:
+        type: number
+      targetVolume:
+        type: number
+      timeWindow:
+        type: integer
+      userId:
+        type: string
+    required:
+    - alertType
+    - symbol
+    - userId
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: 加密貨幣價格監控與警報系統 API
+  title: CryptoWatch API
+  version: "1.0"
+paths:
+  /alerts:
+    post:
+      consumes:
+      - application/json
+      description: 創建價格警報或成交量警報
+      parameters:
+      - description: 警報資訊
+        in: body
+        name: alert
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateAlertRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 創建警報
+      tags:
+      - alerts
+  /alerts/{alertId}:
+    delete:
+      description: 根據警報ID刪除警報
+      parameters:
+      - description: 警報ID
+        in: path
+        name: alertId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 刪除警報
+      tags:
+      - alerts
+  /alerts/{userId}:
+    get:
+      description: 根據用戶ID獲取所有警報
+      parameters:
+      - description: 用戶ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 獲取用戶警報
+      tags:
+      - alerts
+  /prices:
+    get:
+      description: 返回 BTC, ETH, BNB, SOL, XRP 等幣種的即時價格
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 獲取所有加密貨幣價格
+      tags:
+      - prices
+swagger: "2.0"

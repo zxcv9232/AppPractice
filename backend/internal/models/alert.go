@@ -23,10 +23,3 @@ type CreateAlertRequest struct {
 	TargetVolume float64 `json:"targetVolume,omitempty"`
 	TimeWindow   int     `json:"timeWindow,omitempty"`
 }
-
-type VolumeSnapshot struct {
-	Symbol      string    `json:"symbol"`
-	Volume      float64   `json:"volume"`
-	Timestamp   time.Time `json:"timestamp"`
-}
-

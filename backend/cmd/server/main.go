@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"cryptowatch/config"
+	_ "cryptowatch/docs"
 	"cryptowatch/internal/api/handlers"
 	"cryptowatch/internal/api/middleware"
 	"cryptowatch/internal/repository"
@@ -11,7 +12,15 @@ import (
 	"cryptowatch/internal/worker"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
+
+// @title           CryptoWatch API
+// @version         1.0
+// @description     加密貨幣價格監控與警報系統 API
+// @host            localhost:8080
+// @BasePath        /api
 
 func main() {
 	cfg := config.Load()
@@ -30,11 +39,13 @@ func main() {
 	alertMonitor := worker.NewAlertMonitor(redisRepo)
 	go alertMonitor.Start()
 
-	volumeMonitor := worker.NewVolumeMonitor(redisRepo)
+	volumeMonitor := worker.NewVolumeMonitor(redisRepo, priceService)
 	go volumeMonitor.Start()
 
 	router := gin.Default()
 	router.Use(middleware.CORS())
+
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	api := router.Group("/api")
 	{

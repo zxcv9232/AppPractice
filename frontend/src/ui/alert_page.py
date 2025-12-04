@@ -36,7 +36,20 @@ class AlertPage:
         )
         
         self.volume_input = ft.TextField(label="目標成交量", width=200, keyboard_type=ft.KeyboardType.NUMBER, visible=False)
-        self.time_window_input = ft.TextField(label="時間窗口 (分鐘)", width=200, keyboard_type=ft.KeyboardType.NUMBER, value="1", visible=False)
+        self.kline_interval_dropdown = ft.Dropdown(
+            label="K線週期",
+            width=200,
+            visible=False,
+            value="1",
+            options=[
+                ft.dropdown.Option("1", "1 分鐘"),
+                ft.dropdown.Option("3", "3 分鐘"),
+                ft.dropdown.Option("5", "5 分鐘"),
+                ft.dropdown.Option("15", "15 分鐘"),
+                ft.dropdown.Option("30", "30 分鐘"),
+                ft.dropdown.Option("60", "1 小時"),
+            ],
+        )
         self.monitoring_status = ft.Container(
             content=ft.Row([
                 ft.Icon(ft.Icons.NOTIFICATIONS_ACTIVE, color=ft.Colors.GREEN, size=16),
@@ -57,12 +70,12 @@ class AlertPage:
             self.price_input.visible = True
             self.direction_dropdown.visible = True
             self.volume_input.visible = False
-            self.time_window_input.visible = False
+            self.kline_interval_dropdown.visible = False
         else:
             self.price_input.visible = False
             self.direction_dropdown.visible = False
             self.volume_input.visible = True
-            self.time_window_input.visible = True
+            self.kline_interval_dropdown.visible = True
         
         if self.page:
             self.page.update()
@@ -88,7 +101,7 @@ class AlertPage:
                         self.price_input,
                         self.direction_dropdown,
                         self.volume_input,
-                        self.time_window_input,
+                        self.kline_interval_dropdown,
                         ft.Row([
                             ft.ElevatedButton(
                                 text="創建警報",
@@ -119,6 +132,11 @@ class AlertPage:
             self._show_snackbar("請輸入幣種代號", ft.Colors.ORANGE)
             return
         
+        valid_symbols = {"BTC", "ETH", "BNB", "SOL", "XRP", "DOGE", "ADA", "AVAX", "DOT", "MATIC", "LINK", "UNI", "ATOM", "LTC"}
+        if symbol.upper() not in valid_symbols:
+            self._show_snackbar(f"不支援的幣種: {symbol}，請使用 BTC, ETH, BNB, SOL, XRP 等", ft.Colors.ORANGE)
+            return
+        
         if alert_type == "price":
             price = self.price_input.value
             direction = self.direction_dropdown.value
@@ -142,7 +160,7 @@ class AlertPage:
         
         elif alert_type == "volume":
             volume = self.volume_input.value
-            time_window = self.time_window_input.value
+            kline_interval = self.kline_interval_dropdown.value
             
             if not volume:
                 self._show_snackbar("請填寫目標成交量", ft.Colors.ORANGE)
@@ -153,13 +171,13 @@ class AlertPage:
                 symbol=symbol.upper(),
                 alert_type="volume",
                 target_volume=float(volume),
-                time_window=int(time_window) if time_window else 1
+                time_window=int(kline_interval) if kline_interval else 1
             )
             
             if result:
                 self.symbol_input.value = ""
                 self.volume_input.value = ""
-                self.time_window_input.value = "1"
+                self.kline_interval_dropdown.value = "1"
         
         if result:
             self.load_alerts(check_triggered=False)
@@ -174,6 +192,17 @@ class AlertPage:
             self.page.overlay.append(snack_bar)
             snack_bar.open = True
             self.page.update()
+    
+    def _get_interval_text(self, minutes: int) -> str:
+        interval_map = {
+            1: "1分",
+            3: "3分",
+            5: "5分",
+            15: "15分",
+            30: "30分",
+            60: "1小時",
+        }
+        return interval_map.get(minutes, f"{minutes}分")
     
     def load_alerts(self, check_triggered=True):
         alerts = self.api_client.get_user_alerts(self.user_id)
@@ -212,8 +241,9 @@ class AlertPage:
                 
                 if alert_type == "volume":
                     time_window = alert.get("timeWindow", 1)
+                    interval_text = self._get_interval_text(time_window)
                     description = ft.Text(
-                        f"成交量 {alert['targetVolume']:,.0f} ({time_window}分鐘)", 
+                        f"成交量 ≥ {alert['targetVolume']:,.0f} ({interval_text}K)", 
                         size=14
                     )
                     icon = ft.Icons.SHOW_CHART
@@ -258,7 +288,8 @@ class AlertPage:
         
         if alert_type == "volume":
             time_window = alert_info.get("timeWindow", 1)
-            message = f"🔔 {alert_info['symbol']} 成交量達標！ {alert_info['targetVolume']:,.0f} ({time_window}分鐘)"
+            interval_text = self._get_interval_text(time_window)
+            message = f"🔔 {alert_info['symbol']} {interval_text}K 成交量達標！ ≥ {alert_info['targetVolume']:,.0f}"
             bgcolor = ft.Colors.BLUE
         else:
             direction_text = "突破" if alert_info.get("direction") == "above" else "跌破"
@@ -290,7 +321,8 @@ class AlertPage:
                 
                 if alert_type == "volume":
                     time_window = alert.get("timeWindow", 1)
-                    messages.append(f"{alert['symbol']} 成交量 {alert['targetVolume']:,.0f} ({time_window}分)")
+                    interval_text = self._get_interval_text(time_window)
+                    messages.append(f"{alert['symbol']} {interval_text}K 成交量 ≥ {alert['targetVolume']:,.0f}")
                 else:
                     direction_text = "突破" if alert.get("direction") == "above" else "跌破"
                     messages.append(f"{alert['symbol']} {direction_text} ${alert['targetPrice']:,.2f}")
