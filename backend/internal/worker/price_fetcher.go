@@ -1,10 +1,11 @@
 package worker
 
 import (
-	"log"
 	"time"
 
 	"cryptowatch/internal/service"
+
+	"github.com/rs/zerolog/log"
 )
 
 type PriceFetcher struct {
@@ -23,13 +24,13 @@ func (w *PriceFetcher) Start() {
 	ticker := time.NewTicker(time.Duration(w.interval) * time.Second)
 	defer ticker.Stop()
 
-	log.Println("Price Fetcher Worker started")
+	log.Info().Msg("Price Fetcher Worker started")
 
 	for range ticker.C {
 		if err := w.service.FetchAndStore(); err != nil {
-			log.Printf("Error fetching prices: %v", err)
+			log.Error().Err(err).Msg("Error fetching prices")
 		} else {
-			log.Println("Prices updated successfully")
+			log.Info().Msg("Prices updated successfully")
 		}
 	}
 }

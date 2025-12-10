@@ -1,10 +1,11 @@
 package worker
 
 import (
-	"log"
 	"time"
 
 	"cryptowatch/internal/repository"
+
+	"github.com/rs/zerolog/log"
 )
 
 type AlertMonitor struct {
@@ -19,7 +20,7 @@ func (w *AlertMonitor) Start() {
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 
-	log.Println("Alert Monitor Worker started")
+	log.Info().Msg("Alert Monitor Worker started")
 
 	for range ticker.C {
 		w.checkAlerts()
@@ -29,7 +30,7 @@ func (w *AlertMonitor) Start() {
 func (w *AlertMonitor) checkAlerts() {
 	alerts, err := w.repo.GetAllAlerts()
 	if err != nil {
-		log.Printf("Error fetching alerts: %v", err)
+		log.Error().Err(err).Msg("Error fetching alerts")
 		return
 	}
 
@@ -51,8 +52,11 @@ func (w *AlertMonitor) checkAlerts() {
 		}
 
 		if shouldTrigger {
-			log.Printf("Alert triggered for %s: current price %.2f, target %.2f",
-				alert.Symbol, price.Price, alert.TargetPrice)
+			log.Info().
+				Str("symbol", alert.Symbol).
+				Float64("current_price", price.Price).
+				Float64("target_price", alert.TargetPrice).
+				Msg("Alert triggered")
 			w.repo.DeleteAlert(alert.AlertID)
 		}
 	}

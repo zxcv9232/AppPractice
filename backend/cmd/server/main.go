@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"os"
 
 	"cryptowatch/config"
 	_ "cryptowatch/docs"
@@ -12,9 +12,21 @@ import (
 	"cryptowatch/internal/worker"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
+
+func init() {
+	// 設定 zerolog 全域 logger
+	// 正式環境使用 JSON 格式，開發環境可改用 ConsoleWriter
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+	log.Logger = zerolog.New(os.Stdout).With().
+		Timestamp().
+		Str("service", "cryptowatch").
+		Logger()
+}
 
 // @title           CryptoWatch API
 // @version         1.0
@@ -55,8 +67,8 @@ func main() {
 		api.DELETE("/alerts/:alertId", alertHandler.DeleteAlert)
 	}
 
-	log.Printf("Server starting on port %s", cfg.Port)
+	log.Info().Str("port", cfg.Port).Msg("Server starting")
 	if err := router.Run(":" + cfg.Port); err != nil {
-		log.Fatal("Failed to start server:", err)
+		log.Fatal().Err(err).Msg("Failed to start server")
 	}
 }

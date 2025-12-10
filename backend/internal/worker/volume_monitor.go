@@ -1,11 +1,12 @@
 package worker
 
 import (
-	"log"
 	"time"
 
 	"cryptowatch/internal/repository"
 	"cryptowatch/internal/service"
+
+	"github.com/rs/zerolog/log"
 )
 
 type VolumeMonitor struct {
@@ -24,7 +25,7 @@ func (w *VolumeMonitor) Start() {
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 
-	log.Println("Volume Monitor Worker started")
+	log.Info().Msg("Volume Monitor Worker started")
 
 	for range ticker.C {
 		w.checkVolumeAlerts()
@@ -34,7 +35,7 @@ func (w *VolumeMonitor) Start() {
 func (w *VolumeMonitor) checkVolumeAlerts() {
 	alerts, err := w.repo.GetAllAlerts()
 	if err != nil {
-		log.Printf("Error fetching alerts: %v", err)
+		log.Error().Err(err).Msg("Error fetching alerts")
 		return
 	}
 
@@ -47,13 +48,20 @@ func (w *VolumeMonitor) checkVolumeAlerts() {
 
 		currentVolume, err := w.priceService.FetchKlineVolume(alert.Symbol, interval)
 		if err != nil {
-			log.Printf("Error fetching kline volume for %s: %v", alert.Symbol, err)
+			log.Error().
+				Err(err).
+				Str("symbol", alert.Symbol).
+				Msg("Error fetching kline volume")
 			continue
 		}
 
 		if currentVolume >= alert.TargetVolume {
-			log.Printf("Volume alert triggered for %s: current %s volume %.2f (target: %.2f)",
-				alert.Symbol, interval, currentVolume, alert.TargetVolume)
+			log.Info().
+				Str("symbol", alert.Symbol).
+				Str("interval", interval).
+				Float64("current_volume", currentVolume).
+				Float64("target_volume", alert.TargetVolume).
+				Msg("Volume alert triggered")
 			w.repo.DeleteAlert(alert.AlertID)
 		}
 	}
