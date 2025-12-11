@@ -5,6 +5,7 @@ from services.firebase_client import FirebaseClient
 from ui.home_page import HomePage
 from ui.chart_page import ChartPage
 from ui.alert_page import AlertPage
+from ui.indicator_page import IndicatorPage
 
 def main(page: ft.Page):
     page.title = "虛擬幣看盤 App"
@@ -34,6 +35,7 @@ def main(page: ft.Page):
     
     home_page = HomePage(api_client, show_chart)
     alert_page = AlertPage(api_client, user_id)
+    indicator_page = IndicatorPage(api_client, user_id)
     
     alert_page.set_home_page(home_page)
     
@@ -54,11 +56,19 @@ def main(page: ft.Page):
             page.add(navigation_bar)
             page.update()
             alert_page.load_alerts(check_triggered=False)
+        elif selected_index == 2:
+            home_page.stop_auto_refresh()
+            indicator_page.set_page(page)
+            page.add(indicator_page.build())
+            page.add(navigation_bar)
+            page.update()
+            indicator_page.load_subscriptions()
     
     navigation_bar = ft.NavigationBar(
         destinations=[
             ft.NavigationBarDestination(icon=ft.Icons.HOME, label="首頁"),
             ft.NavigationBarDestination(icon=ft.Icons.NOTIFICATIONS, label="警報"),
+            ft.NavigationBarDestination(icon=ft.Icons.SHOW_CHART, label="指標監控"),
         ],
         on_change=on_navigation_change,
     )

@@ -56,3 +56,88 @@ class APIClient:
             print(f"Error deleting alert: {e}")
             return False
 
+    # ==================== 指標監控 API ====================
+    
+    def create_indicator_subscription(
+        self, 
+        user_id: str, 
+        symbol: str, 
+        telegram_chat_id: str,
+        notify_interval_min: int = 60,
+        enable_volume_check: bool = False,
+        volume_check_mode: str = "multiplier",
+        volume_fixed_value: float = 0,
+        volume_multiplier: float = 2.0,
+        volume_avg_period: int = 20
+    ) -> Optional[Dict]:
+        """創建指標監控訂閱"""
+        try:
+            payload = {
+                "userId": user_id,
+                "symbol": symbol,
+                "telegramChatId": telegram_chat_id,
+                "notifyIntervalMin": notify_interval_min,
+                "enableVolumeCheck": enable_volume_check,
+                "volumeCheckMode": volume_check_mode,
+                "volumeFixedValue": volume_fixed_value,
+                "volumeMultiplier": volume_multiplier,
+                "volumeAvgPeriod": volume_avg_period
+            }
+            
+            response = requests.post(f"{self.base_url}/indicators/subscribe", json=payload, timeout=5)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Error creating indicator subscription: {e}")
+            return None
+    
+    def get_indicator_subscriptions(self, user_id: str) -> List[Dict]:
+        """獲取用戶的指標訂閱列表"""
+        try:
+            response = requests.get(f"{self.base_url}/indicators/subscriptions", params={"userId": user_id}, timeout=5)
+            response.raise_for_status()
+            return response.json() if response.json() else []
+        except Exception as e:
+            print(f"Error fetching indicator subscriptions: {e}")
+            return []
+    
+    def update_indicator_subscription(self, subscription_id: str, **kwargs) -> Optional[Dict]:
+        """更新指標訂閱"""
+        try:
+            response = requests.put(f"{self.base_url}/indicators/subscriptions/{subscription_id}", json=kwargs, timeout=5)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Error updating indicator subscription: {e}")
+            return None
+    
+    def toggle_indicator_subscription(self, subscription_id: str) -> Optional[Dict]:
+        """切換訂閱開關"""
+        try:
+            response = requests.post(f"{self.base_url}/indicators/subscriptions/{subscription_id}/toggle", timeout=5)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Error toggling indicator subscription: {e}")
+            return None
+    
+    def delete_indicator_subscription(self, subscription_id: str) -> bool:
+        """刪除指標訂閱"""
+        try:
+            response = requests.delete(f"{self.base_url}/indicators/subscriptions/{subscription_id}", timeout=5)
+            response.raise_for_status()
+            return True
+        except Exception as e:
+            print(f"Error deleting indicator subscription: {e}")
+            return False
+    
+    def get_indicator_result(self, symbol: str) -> Optional[Dict]:
+        """獲取幣種的指標計算結果"""
+        try:
+            response = requests.get(f"{self.base_url}/indicators/{symbol}", timeout=5)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Error fetching indicator result: {e}")
+            return None
+
