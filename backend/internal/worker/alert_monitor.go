@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"context"
 	"time"
 
 	"cryptowatch/internal/repository"
@@ -16,14 +17,20 @@ func NewAlertMonitor(repo *repository.RedisRepository) *AlertMonitor {
 	return &AlertMonitor{repo: repo}
 }
 
-func (w *AlertMonitor) Start() {
+func (w *AlertMonitor) Start(ctx context.Context) error {
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 
 	log.Info().Msg("Alert Monitor Worker started")
 
-	for range ticker.C {
+	for {
+		select {
+		case <-ctx.Done():
+			log.Info().Msg("Alert Monitor Worker stopped")
+			return ctx.Err()
+		case <-ticker.C:
 		w.checkAlerts()
+		}
 	}
 }
 

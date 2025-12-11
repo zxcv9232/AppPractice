@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"context"
 	"time"
 
 	"cryptowatch/internal/repository"
@@ -21,14 +22,20 @@ func NewVolumeMonitor(repo *repository.RedisRepository, priceService *service.Pr
 	}
 }
 
-func (w *VolumeMonitor) Start() {
+func (w *VolumeMonitor) Start(ctx context.Context) error {
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 
 	log.Info().Msg("Volume Monitor Worker started")
 
-	for range ticker.C {
+	for {
+		select {
+		case <-ctx.Done():
+			log.Info().Msg("Volume Monitor Worker stopped")
+			return ctx.Err()
+		case <-ticker.C:
 		w.checkVolumeAlerts()
+		}
 	}
 }
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"os"
 
 	"cryptowatch/config"
@@ -16,11 +17,10 @@ import (
 	"github.com/rs/zerolog/log"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"golang.org/x/sync/errgroup"
 )
 
 func init() {
-	// 設定 zerolog 全域 logger
-	// 正式環境使用 JSON 格式，開發環境可改用 ConsoleWriter
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	log.Logger = zerolog.New(os.Stdout).With().
 		Timestamp().
@@ -46,13 +46,22 @@ func main() {
 	alertHandler := handlers.NewAlertHandler(alertService)
 
 	priceFetcher := worker.NewPriceFetcher(priceService, cfg.PriceFetchInterval)
-	go priceFetcher.Start()
-
 	alertMonitor := worker.NewAlertMonitor(redisRepo)
-	go alertMonitor.Start()
-
 	volumeMonitor := worker.NewVolumeMonitor(redisRepo, priceService)
-	go volumeMonitor.Start()
+
+	g, ctx := errgroup.WithContext(context.Background())
+
+	g.Go(func() error {
+		return priceFetcher.Start(ctx)
+	})
+
+	g.Go(func() error {
+		return alertMonitor.Start(ctx)
+	})
+
+	g.Go(func() error {
+		return volumeMonitor.Start(ctx)
+	})
 
 	router := gin.Default()
 	router.Use(middleware.CORS())
@@ -67,8 +76,12 @@ func main() {
 		api.DELETE("/alerts/:alertId", alertHandler.DeleteAlert)
 	}
 
-	log.Info().Str("port", cfg.Port).Msg("Server starting")
-	if err := router.Run(":" + cfg.Port); err != nil {
-		log.Fatal().Err(err).Msg("Failed to start server")
+	g.Go(func() error {
+		log.Info().Str("port", cfg.Port).Msg("Server starting")
+		return router.Run(":" + cfg.Port)
+	})
+
+	if err := g.Wait(); err != nil {
+		log.Fatal().Err(err).Msg("Application stopped")
 	}
 }
