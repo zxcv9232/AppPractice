@@ -60,7 +60,7 @@ func (r *CreateSubscriptionRequest) ApplyDefaults() {
 		r.VolumeCheckMode = "multiplier"
 	}
 	if r.VolumeMultiplier <= 0 {
-		r.VolumeMultiplier = 2.0
+		r.VolumeMultiplier = 10.0 // 預設 10 倍均量
 	}
 	if r.VolumeAvgPeriod <= 0 {
 		r.VolumeAvgPeriod = 20

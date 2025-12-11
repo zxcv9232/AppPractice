@@ -30,7 +30,7 @@ func DefaultVolumeConfig() VolumeConfig {
 		Enabled:    false,
 		Mode:       VolumeCheckModeMultiplier,
 		FixedValue: 0,
-		Multiplier: 5.0,
+		Multiplier: 10.0, // 預設 10 倍均量
 		AvgPeriod:  60,
 	}
 }

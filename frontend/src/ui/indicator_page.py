@@ -77,12 +77,20 @@ class IndicatorPage:
         
         self.volume_multiplier_input = ft.TextField(
             label="成交量倍數",
-            hint_text="例如: 2.0 表示 2 倍均量",
+            hint_text="例如: 10.0 表示 10 倍均量",
             width=280,
-            value="2.0",
+            value="10.0",
             visible=False,
             keyboard_type=ft.KeyboardType.NUMBER,
         )
+        
+        # 全幣種清單
+        self.all_symbols = [
+            "BTC", "ETH", "BNB", "SOL", "XRP",
+            "DOGE", "ADA", "AVAX", "1000SHIB", "BCH",
+            "DOT", "LINK", "TON", "UNI", "LTC",
+            "NEAR", "ATOM", "AAVE", "RIVER",
+        ]
         
         self.volume_fixed_input = ft.TextField(
             label="固定成交量閾值",
@@ -175,6 +183,13 @@ class IndicatorPage:
                                 on_click=self.view_indicator,
                             ),
                         ], spacing=10),
+                        ft.ElevatedButton(
+                            text="🚀 一鍵訂閱全部 19 幣種",
+                            icon=ft.Icons.SELECT_ALL,
+                            bgcolor=ft.Colors.BLUE,
+                            color=ft.Colors.WHITE,
+                            on_click=self.subscribe_all_symbols,
+                        ),
                     ], spacing=10),
                     padding=20,
                 ),
@@ -368,6 +383,65 @@ class IndicatorPage:
         if self.api_client.delete_indicator_subscription(subscription_id):
             self.load_subscriptions()
             self._show_snackbar("訂閱已刪除", ft.Colors.GREEN)
+    
+    def subscribe_all_symbols(self, e):
+        """一鍵訂閱全部幣種"""
+        telegram_chat_id = self.telegram_chat_id_input.value
+        
+        if not telegram_chat_id:
+            self._show_snackbar("請先輸入 Telegram Chat ID", ft.Colors.ORANGE)
+            return
+        
+        notify_interval = int(self.notify_interval_dropdown.value or "60")
+        enable_volume = self.enable_volume_check.value
+        volume_mode = self.volume_mode_dropdown.value
+        volume_multiplier = float(self.volume_multiplier_input.value or "10.0")
+        volume_fixed = float(self.volume_fixed_input.value or "0")
+        
+        # 獲取已訂閱的幣種
+        existing_subs = self.api_client.get_indicator_subscriptions(self.user_id)
+        existing_symbols = {sub.get("symbol") for sub in existing_subs} if existing_subs else set()
+        
+        success_count = 0
+        skip_count = 0
+        fail_count = 0
+        
+        for symbol in self.all_symbols:
+            # 跳過已訂閱的
+            if symbol in existing_symbols:
+                skip_count += 1
+                continue
+            
+            result = self.api_client.create_indicator_subscription(
+                user_id=self.user_id,
+                symbol=symbol,
+                telegram_chat_id=telegram_chat_id,
+                notify_interval_min=notify_interval,
+                enable_volume_check=enable_volume,
+                volume_check_mode=volume_mode,
+                volume_fixed_value=volume_fixed,
+                volume_multiplier=volume_multiplier,
+            )
+            
+            if result:
+                success_count += 1
+            else:
+                fail_count += 1
+        
+        # 顯示結果
+        if success_count > 0:
+            msg = f"✅ 成功訂閱 {success_count} 個幣種"
+            if skip_count > 0:
+                msg += f"，跳過 {skip_count} 個已訂閱"
+            self._show_snackbar(msg, ft.Colors.GREEN)
+        elif skip_count > 0:
+            self._show_snackbar(f"全部 {skip_count} 個幣種都已訂閱", ft.Colors.BLUE)
+        else:
+            self._show_snackbar(f"❌ 訂閱失敗", ft.Colors.RED)
+        
+        self.load_subscriptions()
+        if self.page:
+            self.page.update()
     
     def _show_snackbar(self, message: str, bgcolor):
         if self.page:
