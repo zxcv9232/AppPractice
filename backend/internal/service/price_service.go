@@ -45,7 +45,12 @@ func NewPriceService(repo *repository.RedisRepository, apiURL string) *PriceServ
 		apiURL:     apiURL,
 		futuresURL: "https://fapi.binance.com/fapi/v1",
 		marketType: MarketTypeFutures, // 預設合約（U本位永續）
-		symbols:    []string{"BTC", "ETH", "BNB", "SOL", "XRP"},
+		symbols: []string{
+			"BTC", "ETH", "BNB", "SOL", "XRP",
+			"DOGE", "ADA", "AVAX", "1000SHIB", "BCH",
+			"DOT", "LINK", "TON", "UNI", "LTC",
+			"NEAR", "ATOM", "AAVE", "RIVER",
+		},
 	}
 }
 

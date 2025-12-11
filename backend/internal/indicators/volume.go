@@ -17,11 +17,11 @@ const (
 
 // VolumeConfig 成交量檢查配置
 type VolumeConfig struct {
-	Enabled       bool            // 是否啟用成交量檢查
-	Mode          VolumeCheckMode // 檢查模式
-	FixedValue    float64         // 固定值模式：閾值
-	Multiplier    float64         // 倍數模式：N 倍
-	AvgPeriod     int             // 均量計算週期（幾根 K 線）
+	Enabled    bool            // 是否啟用成交量檢查
+	Mode       VolumeCheckMode // 檢查模式
+	FixedValue float64         // 固定值模式：閾值
+	Multiplier float64         // 倍數模式：N 倍
+	AvgPeriod  int             // 均量計算週期（幾根 K 線）
 }
 
 // DefaultVolumeConfig 返回預設配置
@@ -30,8 +30,8 @@ func DefaultVolumeConfig() VolumeConfig {
 		Enabled:    false,
 		Mode:       VolumeCheckModeMultiplier,
 		FixedValue: 0,
-		Multiplier: 2.0,
-		AvgPeriod:  20,
+		Multiplier: 5.0,
+		AvgPeriod:  60,
 	}
 }
 
@@ -94,4 +94,3 @@ func CheckVolumeCondition(result VolumeResult, config VolumeConfig) bool {
 		return true
 	}
 }
-

@@ -49,7 +49,27 @@ type IndicatorConfig struct {
 // DefaultIndicatorConfig 返回預設配置
 func DefaultIndicatorConfig() IndicatorConfig {
 	return IndicatorConfig{
-		Symbols:                []string{"BTC", "ETH", "BNB", "SOL", "XRP"},
+		Symbols: []string{
+			"BTC",      // 比特幣
+			"ETH",      // 以太坊
+			"BNB",      // 幣安幣
+			"SOL",      // Solana
+			"XRP",      // 瑞波幣
+			"DOGE",     // 狗狗幣
+			"ADA",      // Cardano
+			"AVAX",     // Avalanche
+			"1000SHIB", // Shiba Inu (1000倍)
+			"BCH",      // Bitcoin Cash
+			"DOT",      // Polkadot
+			"LINK",     // Chainlink
+			"TON",      // Toncoin
+			"UNI",      // Uniswap
+			"LTC",      // Litecoin
+			"NEAR",     // NEAR Protocol
+			"ATOM",     // Cosmos
+			"AAVE",     // Aave
+			"RIVER",    // River
+		},
 		MarketType:             "futures", // U本位永續合約
 		LRCLength:              42,
 		LRCDevMultiplier:       2.0,
